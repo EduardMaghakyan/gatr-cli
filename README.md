@@ -88,6 +88,24 @@ cd gatr-cli
 
 Run tests: `go test ./...` from each module directory (or use the CI workflow).
 
+### Scenario tests against real Stripe
+
+The `cmd/cli/internal/cli` package ships a 12-test scenario suite (`TestScenario_*`) that exercises `gatr push` end-to-end against a real Stripe **test** account — covering init/validate, idempotent re-runs, plan type mixes, soft updates, hard replaces, deletes, audit log integrity, and the "what happens to existing subscribers when the price changes" case.
+
+They skip silently when `STRIPE_SECRET_KEY` is unset (so `go test ./...` stays green on dev machines and per-PR CI). To run them:
+
+```bash
+export STRIPE_SECRET_KEY=sk_test_...   # test-mode key, restricted to Products+Prices+Meters+BillingMeters recommended
+
+# All 12 scenarios (~6 min; each test cleans up after itself)
+go test ./cmd/cli/internal/cli/ -run TestScenario -v -timeout=10m
+
+# One scenario
+go test ./cmd/cli/internal/cli/ -run TestScenario_HardReplace -v
+```
+
+Each test uses a unique `gatrtest-<hex>` project namespace, so tests don't collide with each other or with real gatr projects in the same Stripe account. Cleanup archives every gatr-managed object under that namespace via the same diff engine `gatr push` uses. Stray objects (from interrupted tests) all carry unique project IDs and are inert — safe to ignore or sweep manually.
+
 ## License
 
 MIT. See [`LICENSE`](LICENSE). No CLA.
