@@ -95,10 +95,16 @@ func (c *Client) UpsertProduct(ctx context.Context, spec ProductSpec, current *M
 
 	if current == nil {
 		params := &stripesdk.ProductParams{
-			Name:        stripesdk.String(spec.Name),
-			Description: stripesdk.String(spec.Description),
-			Active:      stripesdk.Bool(spec.Active),
-			Metadata:    stamped,
+			Name:     stripesdk.String(spec.Name),
+			Active:   stripesdk.Bool(spec.Active),
+			Metadata: stamped,
+		}
+		// Stripe rejects empty-string for Description on create —
+		// "We assume empty values are an attempt to unset a parameter;
+		// however 'description' cannot be unset." Only include the
+		// field when the yaml actually supplies a price_display.
+		if spec.Description != "" {
+			params.Description = stripesdk.String(spec.Description)
 		}
 		params.Context = ctx
 		params.SetIdempotencyKey(idemKey("create_product", c.projectID, spec.YamlID, hash))
@@ -114,10 +120,12 @@ func (c *Client) UpsertProduct(ctx context.Context, spec ProductSpec, current *M
 	}
 
 	params := &stripesdk.ProductParams{
-		Name:        stripesdk.String(spec.Name),
-		Description: stripesdk.String(spec.Description),
-		Active:      stripesdk.Bool(spec.Active),
-		Metadata:    stamped,
+		Name:     stripesdk.String(spec.Name),
+		Active:   stripesdk.Bool(spec.Active),
+		Metadata: stamped,
+	}
+	if spec.Description != "" {
+		params.Description = stripesdk.String(spec.Description)
 	}
 	params.Context = ctx
 	params.SetIdempotencyKey(idemKey("update_product", c.projectID, spec.YamlID, hash))
@@ -366,9 +374,17 @@ func contentHashMeter(spec MeterSpec, eventName string) string {
 
 // productEqual reports whether the spec already matches what's in
 // Stripe — used to short-circuit no-op apply.
+//
+// An empty spec.Description is treated as "match anything" because
+// yaml's price_display is optional; if the user doesn't supply it,
+// we don't want to loop-update a Stripe product that has a description
+// set through some other channel (dashboard edit, earlier yaml, etc.).
+// Upsert never SENDS an empty Description, so idempotency is preserved:
+// once current.Description is set, an empty-yaml spec leaves it alone.
 func productEqual(spec ProductSpec, stamped map[string]string, current ManagedProduct) bool {
+	descMatches := spec.Description == "" || spec.Description == current.Description
 	return spec.Name == current.Name &&
-		spec.Description == current.Description &&
+		descMatches &&
 		spec.Active == current.Active &&
 		stringMapsEqual(stamped, current.Metadata)
 }

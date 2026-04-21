@@ -180,7 +180,9 @@ plans:
 metered_prices:
   - id: api_calls
     name: "API calls"
-    amount_cents: 1
+    unit: calls
+    unit_price: 0.001
+    period: month
     currency: usd
     aggregation: sum
     stripe_meter_id: null
@@ -233,7 +235,9 @@ plans:
 metered_prices:
   - id: tokens
     name: "Tokens"
-    amount_cents: 1
+    unit: tokens
+    unit_price: 0.001
+    period: month
     currency: usd
     aggregation: sum
     stripe_meter_id: null
@@ -434,7 +438,9 @@ plans:
 metered_prices:
   - id: api_calls
     name: "API calls"
-    amount_cents: 1
+    unit: calls
+    unit_price: 0.001
+    period: month
     currency: usd
     aggregation: sum
     stripe_meter_id: null
