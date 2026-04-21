@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [pkg/schema, pkg/stripe, cmd/cli]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+      - name: vet
+        working-directory: ${{ matrix.module }}
+        env:
+          GOWORK: off
+        run: go vet ./...
+      - name: test
+        working-directory: ${{ matrix.module }}
+        env:
+          GOWORK: off
+        run: go test ./... -race -count=1
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+          cache-dependency-path: cmd/cli/go.sum
+      - name: build
+        working-directory: cmd/cli
+        env:
+          GOWORK: off
+        run: go build -o /tmp/gatr .
+      - name: smoke
+        run: /tmp/gatr --version
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: build image
+        run: docker build -t gatr-cli:ci .
+      - name: smoke
+        run: docker run --rm gatr-cli:ci --version
