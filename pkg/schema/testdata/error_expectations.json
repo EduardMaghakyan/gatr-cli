@@ -1,0 +1,17 @@
+{
+  "invalid.bad_version.yaml":           { "code": "E003" },
+  "invalid.missing_version.yaml":       { "code": "E003" },
+  "invalid.unknown_field.yaml":         { "code": "E010" },
+  "invalid.unknown_feature.yaml":       { "code": "E012" },
+  "invalid.duplicate_plan.yaml":        { "code": "E011" },
+  "invalid.unlimited_string.yaml":      { "code": "E013" },
+  "invalid.per_seat_period.yaml":       { "code": "E014" },
+  "invalid.empty_billing.yaml":         { "code": "E010" },
+  "invalid.malformed.yaml":             { "code": "E001" },
+  "invalid.top_level_array.yaml":       { "code": "E010" },
+  "invalid.unknown_credit_consume.yaml":{ "code": "E015" },
+  "invalid.unknown_grant_credit.yaml":  { "code": "E016" },
+  "invalid.unknown_plan_limit.yaml":    { "code": "E017" },
+  "invalid.unknown_plan_include.yaml":  { "code": "E018" },
+  "invalid.multi_violations.yaml":      { "code": "E011" }
+}

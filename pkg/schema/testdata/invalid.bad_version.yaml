@@ -1,0 +1,5 @@
+version: 99
+project: bad-version
+plans:
+  - id: free
+    name: "Free"

@@ -1,0 +1,4 @@
+project: no-version
+plans:
+  - id: free
+    name: "Free"

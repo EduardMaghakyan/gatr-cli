@@ -1,0 +1,11 @@
+version: 4
+project: bad-per-seat
+limits:
+  - id: seats
+    name: "Seats"
+    unit: "seats"
+    period: month
+    per_seat_pricing: true
+plans:
+  - id: pro
+    name: "Pro"

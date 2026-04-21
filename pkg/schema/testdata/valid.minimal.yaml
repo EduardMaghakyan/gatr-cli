@@ -1,0 +1,5 @@
+version: 4
+project: minimal-app
+plans:
+  - id: free
+    name: "Free"

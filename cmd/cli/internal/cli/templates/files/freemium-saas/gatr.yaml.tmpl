@@ -1,0 +1,39 @@
+version: 4
+project: {{.Project}}
+
+# Freemium SaaS — free tier + paid plan, feature gates only.
+# No credits, no metering. The classic "upgrade to unlock" shape.
+
+features:
+  - id: export_pdf
+    name: "PDF export"
+  - id: priority_support
+    name: "Priority support"
+
+limits:
+  - id: projects
+    name: "Projects"
+    unit: "projects"
+    period: never
+
+plans:
+  - id: free
+    name: "Free"
+    price_display: "$0"
+    features: []
+    limits:
+      projects: 3
+    overage_policy: block
+
+  - id: pro
+    name: "Pro"
+    price_display: "$19 / month"
+    billing:
+      monthly:
+        amount_cents: 1900
+        currency: usd
+        stripe_price_id: null  # `gatr push` fills this in
+    features: [export_pdf, priority_support]
+    limits:
+      projects: 100
+    overage_policy: block

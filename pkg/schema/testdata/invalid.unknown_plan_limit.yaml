@@ -1,0 +1,13 @@
+version: 4
+project: bad-limit-ref
+limits:
+  - id: seats
+    name: "Seats"
+    unit: "seats"
+    period: never
+plans:
+  - id: pro
+    name: "Pro"
+    limits:
+      seats: 5
+      projects: 10

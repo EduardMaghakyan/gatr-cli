@@ -1,0 +1,40 @@
+version: 4
+project: {{.Project}}
+
+# Usage-based API — pay per API call beyond an included allowance. Metering
+# is post-paid and pushed to Stripe Meters every 5 minutes (server-side, M7).
+
+metered_prices:
+  - id: api_calls
+    name: "API calls"
+    unit: "calls"
+    unit_price: 0.001
+    stripe_meter_id: null  # `gatr push` fills this in
+    period: month
+    currency: usd
+    aggregation: sum
+
+plans:
+  - id: developer
+    name: "Developer"
+    price_display: "Pay as you go"
+    billing:
+      monthly:
+        amount_cents: 0
+        currency: usd
+        stripe_price_id: null
+    includes:
+      api_calls: 10000
+    overage_policy: bill
+
+  - id: team
+    name: "Team"
+    price_display: "$199 / month"
+    billing:
+      monthly:
+        amount_cents: 19900
+        currency: usd
+        stripe_price_id: null
+    includes:
+      api_calls: 1000000
+    overage_policy: bill

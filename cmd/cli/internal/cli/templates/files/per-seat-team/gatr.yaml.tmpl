@@ -1,0 +1,44 @@
+version: 4
+project: {{.Project}}
+
+# Per-seat team tool — flat base price plus per-seat pricing.
+# Seat count is enforced by gatr.limit("seats") and synced to Stripe
+# subscription quantity (server-side, M7).
+
+limits:
+  - id: seats
+    name: "Team seats"
+    unit: "seats"
+    period: never
+    per_seat_pricing: true
+  - id: workspaces
+    name: "Workspaces"
+    unit: "workspaces"
+    period: never
+
+plans:
+  - id: starter
+    name: "Starter"
+    price_display: "$10 per seat / month"
+    billing:
+      monthly:
+        amount_cents: 1000
+        currency: usd
+        stripe_price_id: null  # `gatr push` fills this in
+    limits:
+      seats: 10
+      workspaces: 3
+    overage_policy: block
+
+  - id: business
+    name: "Business"
+    price_display: "$20 per seat / month"
+    billing:
+      monthly:
+        amount_cents: 2000
+        currency: usd
+        stripe_price_id: null
+    limits:
+      seats: unlimited
+      workspaces: unlimited
+    overage_policy: bill

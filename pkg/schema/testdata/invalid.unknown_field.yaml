@@ -1,0 +1,6 @@
+version: 4
+project: extra-key
+extraneous_top_level: true
+plans:
+  - id: free
+    name: "Free"

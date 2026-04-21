@@ -1,0 +1,6 @@
+version: 4
+project: bad-billing
+plans:
+  - id: pro
+    name: "Pro"
+    billing: {}

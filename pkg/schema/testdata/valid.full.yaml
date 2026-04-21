@@ -1,0 +1,98 @@
+version: 4
+project: full-app
+
+features:
+  - id: export_pdf
+    name: "PDF export"
+  - id: custom_domain
+    name: "Custom domain"
+
+limits:
+  - id: seats
+    name: "Team seats"
+    unit: "seats"
+    period: never
+    per_seat_pricing: true
+  - id: projects
+    name: "Projects"
+    unit: "projects"
+    period: never
+  - id: api_quota
+    name: "Monthly API quota"
+    unit: "calls"
+    period: month
+
+credits:
+  - id: ai_credits
+    name: "AI credits"
+    rollover: false
+
+operations:
+  - id: chat_gpt4
+    consumes: { ai_credits: 10 }
+
+metered_prices:
+  - id: api_calls
+    name: "API calls"
+    unit: "calls"
+    unit_price: 0.001
+    stripe_meter_id: mtr_xyz
+    period: month
+    currency: usd
+    aggregation: sum
+
+plans:
+  - id: free
+    name: "Free"
+    price_display: "$0"
+    features: []
+    limits:
+      seats: 1
+      projects: 3
+      api_quota: 1000
+    grants:
+      ai_credits: 100
+    includes:
+      api_calls: 1000
+    overage_policy: block
+
+  - id: pro
+    name: "Pro"
+    price_display: "$29 / month"
+    billing:
+      monthly:
+        amount_cents: 2900
+        currency: usd
+        stripe_price_id: price_pro_monthly
+      annual:
+        amount_cents: 29000
+        currency: usd
+        stripe_price_id: price_pro_annual
+        price_display: "$290 / year"
+    trial_days: 14
+    features: [export_pdf]
+    limits:
+      seats: 10
+      projects: 20
+      api_quota: 50000
+    grants:
+      ai_credits: 5000
+    includes:
+      api_calls: 50000
+    overage_policy: bill
+
+  - id: enterprise
+    name: "Enterprise"
+    price_display: "Contact us"
+    cta: contact
+    cta_url: "mailto:sales@example.com"
+    features: [export_pdf, custom_domain]
+    limits:
+      seats: unlimited
+      projects: unlimited
+      api_quota: unlimited
+    grants:
+      ai_credits: unlimited
+    includes:
+      api_calls: unlimited
+    overage_policy: bill

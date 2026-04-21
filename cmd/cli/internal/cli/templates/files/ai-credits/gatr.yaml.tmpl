@@ -1,0 +1,50 @@
+version: 4
+project: {{.Project}}
+
+# AI credits — pre-paid pool, costed operations. Model calls are debited
+# atomically via gatr.consume(). Available in M4 of the v1 plan.
+
+credits:
+  - id: ai_credits
+    name: "AI credits"
+    rollover: false
+
+operations:
+  - id: chat_basic
+    consumes: { ai_credits: 1 }
+  - id: chat_advanced
+    consumes: { ai_credits: 10 }
+  - id: image_gen
+    consumes: { ai_credits: 50 }
+
+plans:
+  - id: free
+    name: "Free"
+    price_display: "$0"
+    grants:
+      ai_credits: 50
+    overage_policy: block
+
+  - id: starter
+    name: "Starter"
+    price_display: "$15 / month"
+    billing:
+      monthly:
+        amount_cents: 1500
+        currency: usd
+        stripe_price_id: null  # `gatr push` fills this in
+    grants:
+      ai_credits: 1000
+    overage_policy: block
+
+  - id: pro
+    name: "Pro"
+    price_display: "$49 / month"
+    billing:
+      monthly:
+        amount_cents: 4900
+        currency: usd
+        stripe_price_id: null
+    grants:
+      ai_credits: 10000
+    overage_policy: block

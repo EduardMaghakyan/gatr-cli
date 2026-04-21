@@ -1,0 +1,7 @@
+version: 4
+project: dupe
+plans:
+  - id: pro
+    name: "Pro"
+  - id: pro
+    name: "Pro again"

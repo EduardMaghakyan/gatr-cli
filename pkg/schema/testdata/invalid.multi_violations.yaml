@@ -1,0 +1,17 @@
+version: 4
+project: multi
+features:
+  - id: export_pdf
+    name: "PDF export"
+limits:
+  - id: seats
+    name: "Seats"
+    unit: "seats"
+    period: month
+    per_seat_pricing: true
+plans:
+  - id: pro
+    name: "Pro"
+    features: [nonexistent]
+  - id: pro
+    name: "Pro dup"

@@ -1,0 +1,11 @@
+version: 4
+project: bad-consume
+credits:
+  - id: ai_credits
+    name: "AI credits"
+operations:
+  - id: chat
+    consumes: { ia_credits: 10 }
+plans:
+  - id: pro
+    name: "Pro"

@@ -1,0 +1,9 @@
+version: 4
+project: feature-ref
+features:
+  - id: export_pdf
+    name: "PDF export"
+plans:
+  - id: pro
+    name: "Pro"
+    features: [nonexistent]

@@ -1,0 +1,428 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "$ref": "#/$defs/__schema0"
+    },
+    "project": {
+      "$ref": "#/$defs/__schema1"
+    },
+    "features": {
+      "$ref": "#/$defs/__schema2"
+    },
+    "limits": {
+      "$ref": "#/$defs/__schema3"
+    },
+    "credits": {
+      "$ref": "#/$defs/__schema9"
+    },
+    "operations": {
+      "$ref": "#/$defs/__schema10"
+    },
+    "metered_prices": {
+      "$ref": "#/$defs/__schema11"
+    },
+    "plans": {
+      "$ref": "#/$defs/__schema12"
+    }
+  },
+  "required": [
+    "version",
+    "project",
+    "plans"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "type": "number",
+      "const": 4
+    },
+    "__schema1": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema2": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "__schema3": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/__schema4"
+          },
+          "name": {
+            "$ref": "#/$defs/__schema5"
+          },
+          "unit": {
+            "$ref": "#/$defs/__schema6"
+          },
+          "period": {
+            "$ref": "#/$defs/__schema7"
+          },
+          "per_seat_pricing": {
+            "$ref": "#/$defs/__schema8"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "unit",
+          "period"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "__schema4": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema5": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema6": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema7": {
+      "type": "string",
+      "enum": [
+        "never",
+        "month",
+        "year"
+      ]
+    },
+    "__schema8": {
+      "type": "boolean"
+    },
+    "__schema9": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rollover": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "__schema10": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "consumes": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "minLength": 1
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "required": [
+          "id",
+          "consumes"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "__schema11": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unit_price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "stripe_meter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ]
+          },
+          "hard_cap": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "pattern": "^[a-z]{3}$"
+          },
+          "aggregation": {
+            "type": "string",
+            "enum": [
+              "sum",
+              "count",
+              "last"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "unit",
+          "unit_price",
+          "stripe_meter_id",
+          "period",
+          "currency",
+          "aggregation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "__schema12": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/__schema13"
+      }
+    },
+    "__schema13": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "price_display": {
+          "type": "string"
+        },
+        "stripe_price_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "billing": {
+          "type": "object",
+          "properties": {
+            "monthly": {
+              "$ref": "#/$defs/__schema14"
+            },
+            "annual": {
+              "$ref": "#/$defs/__schema16"
+            }
+          },
+          "additionalProperties": false
+        },
+        "trial_days": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "cta": {
+          "type": "string",
+          "enum": [
+            "contact",
+            "checkout"
+          ]
+        },
+        "cta_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "features": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "limits": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/__schema17"
+          }
+        },
+        "grants": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/__schema17"
+          }
+        },
+        "includes": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/__schema17"
+          }
+        },
+        "overage_policy": {
+          "type": "string",
+          "enum": [
+            "bill",
+            "block"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "__schema14": {
+      "$ref": "#/$defs/__schema15"
+    },
+    "__schema15": {
+      "type": "object",
+      "properties": {
+        "amount_cents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "currency": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 3,
+          "pattern": "^[a-z]{3}$"
+        },
+        "stripe_price_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "price_display": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount_cents",
+        "currency",
+        "stripe_price_id"
+      ],
+      "additionalProperties": false
+    },
+    "__schema16": {
+      "$ref": "#/$defs/__schema15"
+    },
+    "__schema17": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "string",
+          "const": "unlimited"
+        }
+      ]
+    }
+  }
+}

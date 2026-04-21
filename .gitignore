@@ -1,0 +1,5 @@
+/dist/
+/gatr
+/cmd/cli/gatr
+*.out
+.DS_Store

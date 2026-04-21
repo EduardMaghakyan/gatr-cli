@@ -1,0 +1,99 @@
+version: 4
+project: {{.Project}}
+
+# Hybrid AI SaaS — features + per-seat + credits + metered API.
+# The full showcase: every primitive in one config. Land them milestone by
+# milestone (features/limits in M1, credits in M4, metering in M5).
+
+features:
+  - id: export_pdf
+    name: "PDF export"
+  - id: custom_domain
+    name: "Custom domain"
+
+limits:
+  - id: seats
+    name: "Team seats"
+    unit: "seats"
+    period: never
+    per_seat_pricing: true
+
+credits:
+  - id: ai_credits
+    name: "AI credits"
+    rollover: false
+
+operations:
+  - id: chat_basic
+    consumes: { ai_credits: 1 }
+  - id: chat_advanced
+    consumes: { ai_credits: 10 }
+  - id: image_gen
+    consumes: { ai_credits: 50 }
+
+metered_prices:
+  - id: api_calls
+    name: "API calls"
+    unit: "calls"
+    unit_price: 0.001
+    stripe_meter_id: null  # `gatr push` fills this in
+    period: month
+    currency: usd
+    aggregation: sum
+
+plans:
+  - id: free
+    name: "Free"
+    price_display: "$0"
+    features: []
+    limits:
+      seats: 1
+    grants:
+      ai_credits: 100
+    includes:
+      api_calls: 1000
+    overage_policy: block
+
+  - id: pro
+    name: "Pro"
+    price_display: "$29 / month + $10 per seat"
+    billing:
+      monthly:
+        amount_cents: 2900
+        currency: usd
+        stripe_price_id: null  # `gatr push` fills this in
+      annual:
+        amount_cents: 29000
+        currency: usd
+        stripe_price_id: null
+    trial_days: 14
+    features: [export_pdf]
+    limits:
+      seats: 10
+    grants:
+      ai_credits: 5000
+    includes:
+      api_calls: 50000
+    overage_policy: bill
+
+  - id: business
+    name: "Business"
+    price_display: "$99 / month + $20 per seat"
+    billing:
+      monthly:
+        amount_cents: 9900
+        currency: usd
+        stripe_price_id: null
+      annual:
+        amount_cents: 99000
+        currency: usd
+        stripe_price_id: null
+    trial_days: 14
+    features: [export_pdf, custom_domain]
+    limits:
+      seats: unlimited
+    grants:
+      ai_credits: 50000
+    includes:
+      api_calls: 500000
+    overage_policy: bill

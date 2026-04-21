@@ -1,0 +1,10 @@
+version: 4
+project: bad-grant
+credits:
+  - id: ai_credits
+    name: "AI credits"
+plans:
+  - id: pro
+    name: "Pro"
+    grants:
+      ia_credits: 100
