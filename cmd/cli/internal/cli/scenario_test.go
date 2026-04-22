@@ -33,6 +33,7 @@ import (
 	"github.com/stretchr/testify/require"
 	stripesdk "github.com/stripe/stripe-go/v82"
 
+	"github.com/EduardMaghakyan/gatr-cli/pkg/schema"
 	gstripe "github.com/EduardMaghakyan/gatr-cli/pkg/stripe"
 )
 
@@ -594,6 +595,69 @@ func TestScenario_PriceChangeWithActiveSubscription(t *testing.T) {
 	// otherwise the project-cleanup's archive-price call can race
 	// with Stripe's internal sub↔price indexing.
 	time.Sleep(time.Second)
+}
+
+// ── Import round-trip ──────────────────────────────────────────────
+
+// TestScenario_ImportRoundTrip validates the import contract: after a
+// push creates gatr-managed Stripe objects, `gatr import` scanning the
+// same account must produce a yaml whose stripe_price_id values match
+// what we just pushed. The generated yaml parses cleanly via the
+// schema validator (proves `gatr validate` would pass on it).
+//
+// Note: we don't dry-run-push the imported yaml here. Import sees ALL
+// products on the account — gatr-managed AND operator-owned. A test
+// Stripe account shared across many runs will almost always have extra
+// noise. The proper "adoption flow" (push recognizes existing Stripe
+// objects by their stripe_price_id and stamps gatr_managed metadata
+// on them) is a separate future feature; this test just proves the
+// import-side contract.
+func TestScenario_ImportRoundTrip(t *testing.T) {
+	key := requireStripeKey(t)
+	projectID := newTestProject(t, key)
+
+	// Push yaml v1 — creates one product + one price.
+	yamlPath := writeYAML(t, simpleProPlan(projectID, `"Pro"`, 2900))
+	_, _, err := runPushAndCapture(t, pushOpts(t, projectID, yamlPath, key))
+	require.NoError(t, err)
+
+	client := mustClient(t, key, projectID)
+	prices, err := client.ListManagedPrices(context.Background())
+	require.NoError(t, err)
+	require.Len(t, prices, 1)
+	expectedPriceID := prices[0].StripeID
+
+	// Import into a fresh temp dir.
+	importDir := t.TempDir()
+	importedPath := filepath.Join(importDir, "gatr.yaml")
+	var iout, ierr bytes.Buffer
+	err = runImport(context.Background(), &iout, &ierr, &importOptions{
+		configPath:  importedPath,
+		projectSlug: projectID,
+		secretKey:   key,
+	})
+	require.NoError(t, err, "import failed.\nstdout:\n%s\nstderr:\n%s", iout.String(), ierr.String())
+
+	// The emitted yaml must pass schema validation — import's core
+	// contract.
+	cfg, err := schema.ParseFileAndValidate(importedPath)
+	require.NoError(t, err)
+	require.Equal(t, projectID, cfg.Project)
+
+	// Our pushed Pro plan must appear in the import with the same
+	// stripe_price_id. (It may not be the ONLY plan — a shared test
+	// account accumulates other products — which is why we don't
+	// require.Len(plans, 1).)
+	var found bool
+	for _, p := range cfg.Plans {
+		if p.Billing != nil && p.Billing.Monthly != nil &&
+			p.Billing.Monthly.StripePriceID != nil &&
+			*p.Billing.Monthly.StripePriceID == expectedPriceID {
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "imported yaml must include the pushed plan's price id (%s)", expectedPriceID)
 }
 
 // ── Audit log integrity ─────────────────────────────────────────────

@@ -44,6 +44,18 @@ gatr push --dry-run
 gatr push --auto-approve --auto-patch
 ```
 
+Already have products/prices in Stripe? Start with the reverse:
+
+```bash
+# Read Stripe → emit a starter gatr.yaml (refuses to overwrite)
+gatr import --project my-app
+
+# Review the file, fill in features/limits/credits (Stripe has no
+# equivalent), then push to confirm the round-trip is a no-op.
+gatr validate
+gatr push --dry-run
+```
+
 ## Commands
 
 | Command | What it does |
@@ -53,6 +65,7 @@ gatr push --auto-approve --auto-patch
 | `gatr validate --check-stripe` | Verify every `stripe_price_id` / `stripe_meter_id` resolves in Stripe |
 | `gatr typegen` | Generate typed TS/Go bindings from `gatr.yaml` |
 | `gatr push` | Reconcile Stripe with `gatr.yaml` (idempotent diff + apply) |
+| `gatr import` | Read an existing Stripe account → emit a starter `gatr.yaml` |
 
 Run `gatr <command> --help` for full option lists.
 

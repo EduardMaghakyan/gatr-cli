@@ -20,6 +20,7 @@ func NewRoot(version string) *cobra.Command {
 	root.AddCommand(newValidateCmd())
 	root.AddCommand(newTypegenCmd())
 	root.AddCommand(newPushCmd())
+	root.AddCommand(newImportCmd())
 	return root
 }
 
@@ -30,5 +31,7 @@ Common commands:
   gatr init               Pick a template, scaffold gatr.yaml + sample SDK code
   gatr validate           Lint your gatr.yaml against the canonical schema
   gatr typegen --lang ts  Generate typed bindings for the SDK from gatr.yaml
+  gatr push               Reconcile Stripe to match gatr.yaml
+  gatr import             Read Stripe → emit a starter gatr.yaml
 
 Run 'gatr <command> --help' for details. Docs: https://gatr.dev`

@@ -3,12 +3,14 @@ module github.com/EduardMaghakyan/gatr-cli/cmd/cli
 go 1.24
 
 require (
-	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/EduardMaghakyan/gatr-cli/pkg/schema v0.0.0-00010101000000-000000000000
 	github.com/EduardMaghakyan/gatr-cli/pkg/stripe v0.0.0-00010101000000-000000000000
+	github.com/charmbracelet/huh v0.6.0
+	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.11.1
+	github.com/stripe/stripe-go/v82 v82.5.0
+	sigs.k8s.io/yaml v1.5.0
 )
 
 require (
@@ -37,13 +39,11 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stripe/stripe-go/v82 v82.5.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	sigs.k8s.io/yaml v1.5.0 // indirect
 )
 
 replace github.com/EduardMaghakyan/gatr-cli/pkg/schema => ../../pkg/schema
