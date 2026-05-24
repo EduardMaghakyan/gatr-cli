@@ -129,3 +129,47 @@ func renderSummary(plan gstripe.DiffPlan) string {
 	}
 	return "  " + strings.Join(parts, subtleStyle.Render(", "))
 }
+
+// renderAdoptionPlan prints the "Adopting" preview block before the
+// standard diff plan. Adoption candidates are objects already in
+// Stripe that gatr is about to claim by stamping metadata. Empty input
+// is a no-op (no header printed) so an unrelated push stays quiet.
+//
+// The styling matches RenderDiffPlan's title row + indent so the two
+// blocks read as one combined plan.
+func renderAdoptionPlan(w io.Writer, plan gstripe.AdoptionPlan, projectID string) {
+	if len(plan.Candidates) == 0 {
+		return
+	}
+	fmt.Fprintln(w, titleStyle.Render(fmt.Sprintf("gatr push — adopting existing Stripe objects into project %s", projectID)))
+	fmt.Fprintln(w)
+	for _, c := range plan.Candidates {
+		// Glyph + label borrow from the diff palette's "create" style
+		// since adoption is conceptually "bring this under management".
+		// Different verb keeps the user from confusing it with an
+		// actual create.
+		glyph := diffCreateStyle.Render("+")
+		label := diffCreateStyle.Render("adopt")
+		row := fmt.Sprintf("    %s %s %s/%s %s",
+			glyph, label, c.Resource, codeStyle.Render(c.YamlID),
+			subtleStyle.Render("("+c.StripeID+")"),
+		)
+		if c.Name != "" {
+			row += " " + subtleStyle.Render("— "+c.Name)
+		}
+		fmt.Fprintln(w, row)
+	}
+	fmt.Fprintln(w)
+}
+
+// renderAdoptionConflicts prints fatal adoption classifications to
+// errOut. Used in the abort path BEFORE any Stripe writes.
+func renderAdoptionConflicts(w io.Writer, conflicts []gstripe.AdoptionConflict) {
+	printErr(w, fmt.Sprintf("%d adoption conflict(s) — refusing to push:", len(conflicts)))
+	for _, c := range conflicts {
+		fmt.Fprintln(w, "  "+errorStyle.Render("✗")+" "+
+			codeStyle.Render(string(c.Resource)+"/"+c.YamlID)+
+			" "+subtleStyle.Render("("+c.StripeID+")"))
+		fmt.Fprintln(w, "    "+subtleStyle.Render(c.Message))
+	}
+}

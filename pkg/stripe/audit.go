@@ -16,11 +16,15 @@ import (
 // A Replace DiffOp produces TWO entries: one for the archive, one for
 // the create. Each carries the same YamlID and differentiates via
 // Action ("archived" then "created").
+//
+// Adoption (stamping gatr metadata onto a pre-existing Stripe object)
+// emits Action="adopted" — distinct from "created" because the Stripe
+// object already existed before the push touched it.
 type AuditEntry struct {
 	Timestamp string   `json:"timestamp"`
 	ProjectID string   `json:"project_id"`
 	Resource  string   `json:"resource"` // product | price | meter
-	Action    string   `json:"action"`   // created | updated | replaced | archived
+	Action    string   `json:"action"`   // created | updated | replaced | archived | adopted
 	YamlID    string   `json:"yaml_id"`
 	StripeID  string   `json:"stripe_id,omitempty"`
 	Changes   []string `json:"changes,omitempty"`

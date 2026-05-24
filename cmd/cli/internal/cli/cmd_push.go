@@ -180,16 +180,37 @@ func runPush(ctx context.Context, out, errOut io.Writer, opts *pushOptions) erro
 		return err
 	}
 
+	// Pre-phase: classify any stripe_price_id / stripe_meter_id hints
+	// in the yaml against current Stripe state. Conflicts (foreign-
+	// project ownership, meter adoption attempts, missing IDs) are
+	// fatal — surface them BEFORE touching anything.
+	adoption, err := client.ScanAdoptions(ctx, cfg)
+	if err != nil {
+		printErr(errOut, err.Error())
+		return err
+	}
+	if len(adoption.Conflicts) > 0 {
+		renderAdoptionConflicts(errOut, adoption.Conflicts)
+		return fmt.Errorf("adoption conflicts — fix yaml or Stripe state and retry")
+	}
+
 	current, err := listCurrentState(ctx, client)
 	if err != nil {
 		printErr(errOut, err.Error())
 		return err
 	}
+	// Inject adoption candidates into current as if they were already
+	// managed. The diff engine then sees them and emits NoOp / Update
+	// / Replace exactly like any other managed object — adoption only
+	// stamps metadata, the field reconciliation flows through the
+	// normal ApplyPlan.
+	current = applyAdoptionTo(current, adoption.Candidates)
 
 	plan := gstripe.ComputeDiff(desired, current)
+	renderAdoptionPlan(out, adoption, projectID)
 	RenderDiffPlan(out, plan, projectID)
 
-	if !plan.HasChanges() {
+	if !plan.HasChanges() && len(adoption.Candidates) == 0 {
 		return nil
 	}
 	proceed, err := shouldApply(out, errOut, opts)
@@ -207,6 +228,19 @@ func runPush(ctx context.Context, out, errOut io.Writer, opts *pushOptions) erro
 	}
 	defer audit.Close()
 
+	// Phase 1: stamp metadata on every adoption candidate. Each
+	// success writes one audit entry (Action="adopted") so a crash
+	// between here and ApplyPlan still leaves a clear trail of what
+	// was claimed.
+	if err := executeAdoption(ctx, client, adoption.Candidates, audit); err != nil {
+		printErr(errOut, err.Error())
+		fmt.Fprintln(errOut, subtleStyle.Render("  Partial adoption recorded in "+audit.Path()))
+		return err
+	}
+
+	// Phase 2: normal diff apply. The just-adopted objects appear in
+	// the plan as NoOp (or Update if soft fields differ); ApplyPlan
+	// handles them identically to any other managed object.
 	results, applyErr := client.ApplyPlan(ctx, plan, desired, audit)
 	renderApplyResults(out, results, audit.Path())
 	if applyErr != nil {
@@ -217,6 +251,64 @@ func runPush(ctx context.Context, out, errOut io.Writer, opts *pushOptions) erro
 	}
 
 	return decideAndPatch(out, errOut, patchesFromResults(results), opts)
+}
+
+// applyAdoptionTo synthesises ManagedProduct / ManagedPrice entries
+// for each adoption candidate and merges them into current. After
+// this, ComputeDiff treats the candidates as already-managed,
+// emitting NoOp/Update/Replace based on yaml-vs-Stripe field deltas.
+func applyAdoptionTo(current gstripe.CurrentState, candidates []gstripe.AdoptionCandidate) gstripe.CurrentState {
+	for _, c := range candidates {
+		switch c.Resource {
+		case gstripe.ResourceProduct:
+			if c.ProductCurrent != nil {
+				current.Products = append(current.Products, *c.ProductCurrent)
+			}
+		case gstripe.ResourcePrice:
+			if c.PriceCurrent != nil {
+				current.Prices = append(current.Prices, *c.PriceCurrent)
+			}
+		}
+	}
+	return current
+}
+
+// executeAdoption stamps gatr metadata on each candidate in order.
+// Audit entry per success. First failure returns immediately — the
+// caller surfaces it as "partial adoption recorded in audit.log".
+func executeAdoption(ctx context.Context, client *gstripe.Client, candidates []gstripe.AdoptionCandidate, audit gstripe.AuditWriter) error {
+	for _, c := range candidates {
+		entry := gstripe.AuditEntry{
+			ProjectID: client.ProjectID(),
+			Resource:  string(c.Resource),
+			Action:    "adopted",
+			YamlID:    c.YamlID,
+			StripeID:  c.StripeID,
+		}
+		switch c.Resource {
+		case gstripe.ResourceProduct:
+			if _, err := client.AdoptProduct(ctx, c.StripeID, c.YamlID); err != nil {
+				entry.Error = err.Error()
+				_ = audit.Write(entry)
+				return fmt.Errorf("adopt product %s: %w", c.StripeID, err)
+			}
+		case gstripe.ResourcePrice:
+			if _, err := client.AdoptPrice(ctx, c.StripeID, c.YamlID); err != nil {
+				entry.Error = err.Error()
+				_ = audit.Write(entry)
+				return fmt.Errorf("adopt price %s: %w", c.StripeID, err)
+			}
+		default:
+			// Meters reach this branch only as a programmer bug —
+			// ScanAdoptions treats meter requests as conflicts and
+			// halts before we get here.
+			return fmt.Errorf("adopt %s/%s: unsupported resource", c.Resource, c.YamlID)
+		}
+		if err := audit.Write(entry); err != nil {
+			return fmt.Errorf("audit adoption %s: %w", c.StripeID, err)
+		}
+	}
+	return nil
 }
 
 // shouldApply resolves the three-way gate between dry-run, auto-approve,
