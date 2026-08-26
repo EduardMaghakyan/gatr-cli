@@ -222,7 +222,16 @@ func runPush(ctx context.Context, out, errOut io.Writer, opts *pushOptions) erro
 	RenderDiffPlan(out, plan, projectID)
 
 	if !plan.HasChanges() && len(adoption.Candidates) == 0 {
-		return nil
+		// Stripe being in sync says nothing about the server.
+		//
+		// Half of gatr.yaml describes things Stripe has never heard of —
+		// operations, credits, grants, limits, features. Change only those and
+		// the diff is legitimately empty, which used to return here and skip
+		// the deploy entirely: `push --deploy` printed "no changes" and left
+		// the server on the old config. The app then ships asking for an
+		// operation gatr does not know, every call fails, and the one command
+		// whose job is to keep the two halves together is what let them drift.
+		return deployIfAsked(ctx, out, errOut, opts)
 	}
 	proceed, err := shouldApply(out, errOut, opts)
 	if err != nil {
