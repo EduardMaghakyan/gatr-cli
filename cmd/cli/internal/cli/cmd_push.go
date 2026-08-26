@@ -37,6 +37,14 @@ type pushOptions struct {
 	// no effect without --auto-patch.
 	force bool
 
+	// deploy also sends the config to the gatr server after the Stripe work.
+	// Stripe and gatr hold different halves of the same change — the prices
+	// and what a plan grants — and leaving the second to a separate command
+	// run against the database is how they drift.
+	deploy  bool
+	gatrURL string
+	gatrKey string
+
 	// dryRun prints the plan and exits — no prompt, no apply. Useful
 	// in CI as a "show me what would change" step, or locally to eye
 	// the diff before running an unadorned `gatr push`.
@@ -128,6 +136,9 @@ partial failure can be resumed safely.`,
 	cmd.Flags().StringVar(&opts.auditLogPath, "audit-log", "", "Override the default ~/.gatr/audit.log path")
 	cmd.Flags().BoolVar(&opts.autoPatch, "auto-patch", false, "Rewrite gatr.yaml without prompting (CI default; interactive runs prompt instead)")
 	cmd.Flags().BoolVar(&opts.force, "force", false, "Rewrite gatr.yaml even if it has uncommitted git changes (combine with --auto-patch or answer Y at the prompt)")
+	cmd.Flags().BoolVar(&opts.deploy, "deploy", false, "Also send the config to the gatr server, so the running app sees the new pricing")
+	cmd.Flags().StringVar(&opts.gatrURL, "gatr-url", "", "gatr server base URL for --deploy (defaults to $"+envGatrBaseURL+")")
+	cmd.Flags().StringVar(&opts.gatrKey, "gatr-key", "", "gatr API key for --deploy (defaults to $"+envGatrAPIKey+")")
 	return cmd
 }
 
@@ -250,7 +261,75 @@ func runPush(ctx context.Context, out, errOut io.Writer, opts *pushOptions) erro
 		return applyErr
 	}
 
-	return decideAndPatch(out, errOut, patchesFromResults(results), opts)
+	if err := decideAndPatch(out, errOut, patchesFromResults(results), opts); err != nil {
+		return err
+	}
+	// Last, and only after the yaml has been patched: the price ids the server
+	// stores should be the ones that were just created, not the nulls it was
+	// invoked with.
+	return deployIfAsked(ctx, out, errOut, opts)
+}
+
+// deployIfAsked sends the (now patched) config to the gatr server.
+//
+// Stripe and gatr hold different halves of the same change: push creates the
+// prices, and the server decides what a plan grants and what a pack is worth.
+// Leaving the second half to a separate command run against the database is
+// how the two drift — and a config the server has not seen means a purchase
+// that succeeds and grants nothing.
+//
+// Failing here does not undo the Stripe work, and should not: those objects
+// are idempotent and a re-run converges. The error says what is left to do.
+func deployIfAsked(ctx context.Context, out, errOut io.Writer, opts *pushOptions) error {
+	if !opts.deploy {
+		return nil
+	}
+	baseURL, apiKey, err := resolveDeployTarget(opts.gatrURL, opts.gatrKey)
+	if err != nil {
+		printErr(errOut, err.Error())
+		return err
+	}
+	// Re-read rather than reuse the parsed config: decideAndPatch may have
+	// just rewritten this file, and the ids it wrote are the point.
+	yaml, err := os.ReadFile(opts.configPath)
+	if err != nil {
+		printErr(errOut, fmt.Sprintf("read %s: %v", opts.configPath, err))
+		return err
+	}
+	patched, err := schema.ParseAndValidate(yaml)
+	if err != nil {
+		printErr(errOut, err.Error())
+		return err
+	}
+	if err := checkPricesResolved(patched); err != nil {
+		printErr(errOut, err.Error())
+		return err
+	}
+
+	res, err := deployConfig(ctx, baseURL, apiKey, yaml, opts.dryRun)
+	if err != nil {
+		printErr(errOut, err.Error())
+		fmt.Fprintln(errOut, subtleStyle.Render(
+			"  Stripe is already up to date; only the server config is unapplied."))
+		fmt.Fprintln(errOut, subtleStyle.Render(
+			"  Re-run with --deploy once the problem above is fixed."))
+		return err
+	}
+
+	if res.DryRun {
+		fmt.Fprintln(out, successStyle.Render(fmt.Sprintf(
+			"✓ config valid and safe to deploy — project %s would go v%d → v%d",
+			res.ProjectID, res.FromVersion, res.FromVersion+1)))
+	} else {
+		fmt.Fprintln(out, successStyle.Render(fmt.Sprintf(
+			"✓ config deployed — project %s is on v%d (live now)",
+			res.ProjectID, res.ToVersion)))
+	}
+	if len(res.PlansInUse) > 0 {
+		fmt.Fprintln(out, subtleStyle.Render(
+			"  plans in use: "+strings.Join(res.PlansInUse, ", ")))
+	}
+	return nil
 }
 
 // applyAdoptionTo synthesises ManagedProduct / ManagedPrice entries
