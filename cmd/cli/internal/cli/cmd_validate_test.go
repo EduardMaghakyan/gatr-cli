@@ -272,3 +272,43 @@ func TestCollectCheckRows_AllThreeStates(t *testing.T) {
 // ptr returns a pointer to a string literal — cleans up Plan fixture
 // construction above.
 func ptr(s string) *string { return &s }
+
+func TestValidateCountsCreditPacks(t *testing.T) {
+	// The summary is how an operator confirms the CLI read the file they
+	// meant to edit. Staying silent about a section means a pack that never
+	// made it into the file looks exactly like one that did — and packs are
+	// bought with real money.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "gatr.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(`version: 4
+project: packs
+credits:
+  - id: ai_credits
+    name: AI credits
+credit_packs:
+  - id: pack_20
+    name: 20 credits
+    credit: ai_credits
+    credits: 20
+    amount_cents: 1000
+    currency: usd
+  - id: pack_50
+    name: 50 credits
+    credit: ai_credits
+    credits: 50
+    amount_cents: 2500
+    currency: usd
+plans:
+  - id: free
+    name: Free
+`), 0o644))
+
+	var out bytes.Buffer
+	cmd := newValidateCmd()
+	cmd.SetArgs([]string{"-c", path})
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	require.NoError(t, cmd.Execute())
+
+	require.Contains(t, out.String(), "2 credit packs")
+}

@@ -52,11 +52,17 @@ func runValidate(ctx context.Context, out io.Writer, opts *validateOptions) erro
 		}
 		return err
 	}
+	// Credit packs are counted here for the same reason everything else is:
+	// this line is how you check the file the CLI read is the file you meant
+	// to edit. A section it stays silent about is one you cannot confirm
+	// landed — and packs are bought with real money.
 	fmt.Fprintln(out, successStyle.Render(fmt.Sprintf(
-		"✓ %s is valid — %d features, %d limits, %d credits, %d operations, %d metered prices, %d plans",
+		"✓ %s is valid — %d features, %d limits, %d credits, %d operations, "+
+			"%d metered prices, %d credit packs, %d plans",
 		opts.configPath,
 		len(cfg.Features), len(cfg.Limits), len(cfg.Credits),
-		len(cfg.Operations), len(cfg.MeteredPrices), len(cfg.Plans),
+		len(cfg.Operations), len(cfg.MeteredPrices), len(cfg.CreditPacks),
+		len(cfg.Plans),
 	)))
 
 	if !opts.checkStripe {
