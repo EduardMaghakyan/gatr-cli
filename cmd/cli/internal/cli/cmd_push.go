@@ -376,9 +376,9 @@ func renderApplyResults(out io.Writer, results []gstripe.ApplyResult, auditPath 
 // intentionally simple (no colour escapes in the table body) so it
 // survives `| awk` and `| grep`:
 //
-//	  Paste these IDs back into <configPath>:
-//	  <yaml_path>	<stripe_id>
-//	  ...
+//	Paste these IDs back into <configPath>:
+//	<yaml_path>	<stripe_id>
+//	...
 //
 // `showRerunHint` controls whether a trailing "or re-run with
 // --auto-patch" line is printed — suppressed when an interactive
@@ -436,11 +436,11 @@ func confirm(in io.Reader, out io.Writer, prompt string, defaultYes bool) bool {
 // it's testable without standing up a fake Stripe + ApplyPlan. Three
 // cases:
 //
-//   • opts.autoPatch=true        → patch immediately, dirty-tree guard
-//                                   still fires (--force overrides)
-//   • opts.interactive=true and
+//   - opts.autoPatch=true        → patch immediately, dirty-tree guard
+//     still fires (--force overrides)
+//   - opts.interactive=true and
 //     opts.in != nil             → print table, prompt, patch on yes
-//   • neither                    → print table + rerun hint, no patch
+//   - neither                    → print table + rerun hint, no patch
 //
 // In all cases, len(patches)==0 returns nil with no output.
 func decideAndPatch(out, errOut io.Writer, patches []yamlpatch.Patch, opts *pushOptions) error {
@@ -484,6 +484,8 @@ func yamlPathFor(p yamlpatch.Patch) string {
 		return "plans[" + p.YamlID + "].billing.annual.stripe_price_id"
 	case yamlpatch.KindMeteredPrice:
 		return "metered_prices[" + p.YamlID + "].stripe_meter_id"
+	case yamlpatch.KindCreditPack:
+		return "credit_packs[" + p.YamlID + "].stripe_price_id"
 	}
 	return strings.Join([]string{string(p.Kind), p.YamlID}, ":")
 }

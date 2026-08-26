@@ -104,6 +104,26 @@ type Plan struct {
 	OveragePolicy string                       `json:"overage_policy,omitempty"`
 }
 
+// CreditPack is a one-off purchase of credits.
+//
+// Packs and plan grants fill the same pool, which is what makes rollover:true
+// load-bearing: a renewal re-grant on a rollover:false credit hard-resets the
+// balance and would delete a pack the customer had just bought.
+type CreditPack struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	//: Which pool it fills. Refined against Config.Credits.
+	Credit  string `json:"credit"`
+	Credits int    `json:"credits"`
+	//: Subunit integer. Also the anti-tamper check at grant time — the
+	//: webhook compares it against the Checkout session's amount_total
+	//: before topping anyone up.
+	AmountCents   int     `json:"amount_cents"`
+	Currency      string  `json:"currency"`
+	StripePriceID *string `json:"stripe_price_id,omitempty"`
+	PriceDisplay  string  `json:"price_display,omitempty"`
+}
+
 type Config struct {
 	Version       int            `json:"version"`
 	Project       string         `json:"project"`
@@ -112,5 +132,6 @@ type Config struct {
 	Credits       []Credit       `json:"credits"`
 	Operations    []Operation    `json:"operations"`
 	MeteredPrices []MeteredPrice `json:"metered_prices"`
+	CreditPacks   []CreditPack   `json:"credit_packs"`
 	Plans         []Plan         `json:"plans"`
 }

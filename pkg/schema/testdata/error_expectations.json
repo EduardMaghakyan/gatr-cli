@@ -10,6 +10,7 @@
   "invalid.malformed.yaml":             { "code": "E001" },
   "invalid.top_level_array.yaml":       { "code": "E010" },
   "invalid.unknown_credit_consume.yaml":{ "code": "E015" },
+  "invalid.unknown_pack_credit.yaml":  { "code": "E015" },
   "invalid.unknown_grant_credit.yaml":  { "code": "E016" },
   "invalid.unknown_plan_limit.yaml":    { "code": "E017" },
   "invalid.unknown_plan_include.yaml":  { "code": "E018" },

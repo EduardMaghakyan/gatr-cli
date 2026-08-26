@@ -8,6 +8,7 @@
 //   - plans[i].billing.monthly.stripe_price_id
 //   - plans[i].billing.annual.stripe_price_id
 //   - metered_prices[i].stripe_meter_id
+//   - credit_packs[i].stripe_price_id
 //
 // Using yaml.v3's node tree (not Marshal/Unmarshal through structs)
 // keeps comments intact — a round-trip through the Go schema.Config
@@ -28,6 +29,9 @@ const (
 	KindPlanMonthly  Kind = "plan_monthly"
 	KindPlanAnnual   Kind = "plan_annual"
 	KindMeteredPrice Kind = "metered_price"
+	// KindCreditPack targets credit_packs[i].stripe_price_id. Flatter than
+	// the plan kinds: a pack has one price, so there is no interval to name.
+	KindCreditPack Kind = "credit_pack"
 )
 
 // Patch is one field to set. YamlID is the primary key on the left-
@@ -112,6 +116,14 @@ func applyOne(top *yaml.Node, p Patch) bool {
 			return false
 		}
 		return setScalar(mp, "stripe_meter_id", p.StripeID)
+
+	case KindCreditPack:
+		packs := findMappingValue(top, "credit_packs")
+		pack := findByID(packs, p.YamlID)
+		if pack == nil {
+			return false
+		}
+		return setScalar(pack, "stripe_price_id", p.StripeID)
 	}
 	return false
 }
