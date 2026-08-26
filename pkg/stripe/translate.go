@@ -34,6 +34,7 @@ const (
 	PriceYamlSuffixMonthly = "_monthly"
 	PriceYamlSuffixAnnual  = "_annual"
 	PriceYamlSuffixMetered = "_metered"
+	PriceYamlSuffixPack    = "_pack"
 )
 
 // TranslateConfig turns a validated gatr.yaml into the Specs pkg/stripe
@@ -44,7 +45,7 @@ const (
 //     (yaml_id = plan.id + "_monthly"). Same for Annual.
 //   - Each MeteredPrice → one MeterSpec (yaml_id = metered_price.id)
 //     AND one recurring metered PriceSpec (yaml_id = metered_price.id
-//     + "_metered"). The price references the meter by yaml_id via
+//   - "_metered"). The price references the meter by yaml_id via
 //     DesiredState.MeterYamlForPriceYaml; the diff/apply engine resolves
 //     the Stripe meter ID after the meter is created.
 //
@@ -79,6 +80,22 @@ func TranslateConfig(cfg *schema.Config) (DesiredState, error) {
 		}
 	}
 
+	for _, pack := range cfg.CreditPacks {
+		// A pack needs its own product: Stripe attaches every price to one,
+		// and hanging pack prices off a plan's product would make a one-off
+		// purchase look like part of that subscription in the dashboard and
+		// in every revenue report built on it.
+		ds.Products = append(ds.Products, ProductSpec{
+			YamlID:      pack.ID,
+			Name:        pack.Name,
+			Description: pack.PriceDisplay,
+			Active:      true,
+		})
+		priceYaml := pack.ID + PriceYamlSuffixPack
+		ds.Prices = append(ds.Prices, packPriceSpec(priceYaml, pack))
+		ds.ProductYamlForPriceYaml[priceYaml] = pack.ID
+	}
+
 	for _, mp := range cfg.MeteredPrices {
 		ds.Meters = append(ds.Meters, MeterSpec{
 			YamlID:      mp.ID,
@@ -105,6 +122,20 @@ func TranslateConfig(cfg *schema.Config) (DesiredState, error) {
 	}
 
 	return ds, nil
+}
+
+// packPriceSpec produces a one-time Stripe Price. Recurring is nil, and that
+// nil is the whole difference between a pack and a subscription: the upsert
+// layer omits the recurring params entirely, which is how Stripe is told this
+// is a single payment rather than a plan.
+func packPriceSpec(priceYamlID string, pack schema.CreditPack) PriceSpec {
+	return PriceSpec{
+		YamlID:     priceYamlID,
+		UnitAmount: int64(pack.AmountCents),
+		Currency:   pack.Currency,
+		Active:     true,
+		Recurring:  nil,
+	}
 }
 
 func planPriceSpec(planYamlID, priceYamlID, interval string, interval_cfg *schema.BillingInterval) PriceSpec {

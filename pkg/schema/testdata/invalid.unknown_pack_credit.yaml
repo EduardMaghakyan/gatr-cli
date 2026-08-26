@@ -1,0 +1,17 @@
+version: 4
+project: bad-pack
+credits:
+  - id: ai_credits
+    name: "AI credits"
+credit_packs:
+  # Fills a pool nobody declared: this takes the customer's money and
+  # grants nothing, so it must not validate.
+  - id: pack_20
+    name: "20 credits"
+    credit: ia_credits
+    credits: 20
+    amount_cents: 1000
+    currency: usd
+plans:
+  - id: pro
+    name: "Pro"

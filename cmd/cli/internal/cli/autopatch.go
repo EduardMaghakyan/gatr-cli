@@ -21,8 +21,9 @@ import (
 // Recognised yaml_id suffixes (set by TranslateConfig):
 //   - "<plan_id>_monthly"    → KindPlanMonthly  / YamlID=<plan_id>
 //   - "<plan_id>_annual"     → KindPlanAnnual   / YamlID=<plan_id>
+//   - "<pack_id>_pack"       → KindCreditPack   / YamlID=<pack_id>
 //   - "<meter_id>_metered"   → skipped (the metered PRICE has no yaml
-//                              field to patch — the METER does)
+//     field to patch — the METER does)
 //
 // Meter creates → KindMeteredPrice.
 func patchesFromResults(results []gstripe.ApplyResult) []yamlpatch.Patch {
@@ -43,6 +44,10 @@ func patchesFromResults(results []gstripe.ApplyResult) []yamlpatch.Patch {
 			} else if planID, ok := strings.CutSuffix(r.Op.YamlID, gstripe.PriceYamlSuffixAnnual); ok {
 				out = append(out, yamlpatch.Patch{
 					Kind: yamlpatch.KindPlanAnnual, YamlID: planID, StripeID: r.StripeID,
+				})
+			} else if packID, ok := strings.CutSuffix(r.Op.YamlID, gstripe.PriceYamlSuffixPack); ok {
+				out = append(out, yamlpatch.Patch{
+					Kind: yamlpatch.KindCreditPack, YamlID: packID, StripeID: r.StripeID,
 				})
 			}
 			// Metered-price results intentionally don't patch — the

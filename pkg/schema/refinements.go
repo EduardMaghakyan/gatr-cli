@@ -26,6 +26,7 @@ func validateRefinements(c *Config) *Error {
 		checkUniqueIDs(c),
 		checkPlanFeatureRefs(c),
 		checkOperationCreditRefs(c),
+		checkCreditPackRefs(c),
 		checkPlanGrantRefs(c),
 		checkPlanLimitRefs(c),
 		checkPlanIncludeRefs(c),
@@ -65,6 +66,7 @@ func checkUniqueIDs(c *Config) *Error {
 		{"credits", creditIDs(c.Credits)},
 		{"operations", operationIDs(c.Operations)},
 		{"metered_prices", meteredIDs(c.MeteredPrices)},
+		{"credit_packs", creditPackIDs(c.CreditPacks)},
 		{"plans", planIDs(c.Plans)},
 	}
 	for _, ch := range checks {
@@ -103,6 +105,23 @@ func checkOperationCreditRefs(c *Config) *Error {
 					Code:    "E015",
 					Message: "operation '" + op.ID + "' consumes undeclared credit '" + key + "'",
 				}
+			}
+		}
+	}
+	return nil
+}
+
+// checkCreditPackRefs rejects a pack that fills a pool nobody declared. Same
+// class as checkOperationCreditRefs, and the same code — but the consequence
+// is worse: an operation consuming a missing credit fails closed, while a pack
+// naming one takes the customer's money and grants nothing.
+func checkCreditPackRefs(c *Config) *Error {
+	declared := idSet(creditIDs(c.Credits))
+	for _, pack := range c.CreditPacks {
+		if _, ok := declared[pack.Credit]; !ok {
+			return &Error{
+				Code:    "E015",
+				Message: "credit pack '" + pack.ID + "' fills undeclared credit '" + pack.Credit + "'",
 			}
 		}
 	}
@@ -224,6 +243,14 @@ func meteredIDs(xs []MeteredPrice) []string {
 	}
 	return out
 }
+func creditPackIDs(xs []CreditPack) []string {
+	out := make([]string, 0, len(xs))
+	for _, x := range xs {
+		out = append(out, x.ID)
+	}
+	return out
+}
+
 func planIDs(xs []Plan) []string {
 	out := make([]string, len(xs))
 	for i, x := range xs {

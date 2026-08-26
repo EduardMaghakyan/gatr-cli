@@ -72,7 +72,16 @@ func TranslateFromStripe(
 			Credits:       []schema.Credit{},
 			Operations:    []schema.Operation{},
 			MeteredPrices: []schema.MeteredPrice{},
-			Plans:         []schema.Plan{},
+			// Empty, not nil: a nil slice marshals to `credit_packs: null`
+			// and the schema wants an array, so the emitted yaml would not
+			// pass its own validation.
+			//
+			// Deliberately never populated from Stripe. A one-time price is
+			// not evidence of a credit pack — it could be anything the
+			// account sells — and guessing would put credits behind a
+			// purchase the author never described.
+			CreditPacks: []schema.CreditPack{},
+			Plans:       []schema.Plan{},
 		},
 	}
 
