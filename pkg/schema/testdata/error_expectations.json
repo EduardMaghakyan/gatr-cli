@@ -14,5 +14,6 @@
   "invalid.unknown_grant_credit.yaml":  { "code": "E016" },
   "invalid.unknown_plan_limit.yaml":    { "code": "E017" },
   "invalid.unknown_plan_include.yaml":  { "code": "E018" },
-  "invalid.multi_violations.yaml":      { "code": "E011" }
+  "invalid.multi_violations.yaml":      { "code": "E011" },
+  "invalid.consume_finer_than_a_hundredth.yaml": { "code": "E010" }
 }

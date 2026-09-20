@@ -1,0 +1,11 @@
+version: 4
+project: too-fine
+credits:
+  - id: ai_credits
+    name: "AI credits"
+operations:
+  - id: chat
+    consumes: { ai_credits: 0.001 }
+plans:
+  - id: pro
+    name: "Pro"
