@@ -1,0 +1,13 @@
+version: 4
+project: fractional
+credits:
+  - id: ai_credits
+    name: "AI credits"
+operations:
+  - id: render
+    consumes: { ai_credits: 1 }
+  - id: render_styled
+    consumes: { ai_credits: 1.5 }
+plans:
+  - id: free
+    name: "Free"

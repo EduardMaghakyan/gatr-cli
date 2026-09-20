@@ -60,8 +60,8 @@ type Credit struct {
 }
 
 type Operation struct {
-	ID       string         `json:"id"`
-	Consumes map[string]int `json:"consumes"`
+	ID       string             `json:"id"`
+	Consumes map[string]float64 `json:"consumes"`
 }
 
 type MeteredPrice struct {

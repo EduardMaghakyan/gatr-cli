@@ -55,6 +55,13 @@ func TestParseValidFull(t *testing.T) {
 	require.Equal(t, 14, pro.TrialDays)
 }
 
+func TestParseFractionalConsume(t *testing.T) {
+	cfg, err := schema.ParseFileAndValidate(fixture(t, "valid.fractional_consume.yaml"))
+	require.NoError(t, err)
+	require.Equal(t, 1.0, cfg.Operations[0].Consumes["ai_credits"])
+	require.Equal(t, 1.5, cfg.Operations[1].Consumes["ai_credits"])
+}
+
 func TestRejectInvalid(t *testing.T) {
 	expectations := loadExpectations(t)
 	for name, want := range expectations {
