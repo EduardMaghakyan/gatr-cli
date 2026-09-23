@@ -25,6 +25,8 @@ type DesiredState struct {
 	// ProductYamlForPriceYaml same idea — maps a price's yaml_id back
 	// to the product yaml_id whose Stripe product ID it must reference.
 	ProductYamlForPriceYaml map[string]string
+
+	PinnedPriceByYaml map[string]string
 }
 
 // Yaml id suffixes for generated price entries. Keeping them as named
@@ -55,6 +57,7 @@ func TranslateConfig(cfg *schema.Config) (DesiredState, error) {
 	ds := DesiredState{
 		MeterYamlForPriceYaml:   map[string]string{},
 		ProductYamlForPriceYaml: map[string]string{},
+		PinnedPriceByYaml:       map[string]string{},
 	}
 
 	for _, plan := range cfg.Plans {
@@ -72,11 +75,13 @@ func TranslateConfig(cfg *schema.Config) (DesiredState, error) {
 			priceYaml := plan.ID + PriceYamlSuffixMonthly
 			ds.Prices = append(ds.Prices, planPriceSpec(plan.ID, priceYaml, "month", plan.Billing.Monthly))
 			ds.ProductYamlForPriceYaml[priceYaml] = plan.ID
+			ds.pinPrice(priceYaml, plan.Billing.Monthly.StripePriceID)
 		}
 		if plan.Billing.Annual != nil {
 			priceYaml := plan.ID + PriceYamlSuffixAnnual
 			ds.Prices = append(ds.Prices, planPriceSpec(plan.ID, priceYaml, "year", plan.Billing.Annual))
 			ds.ProductYamlForPriceYaml[priceYaml] = plan.ID
+			ds.pinPrice(priceYaml, plan.Billing.Annual.StripePriceID)
 		}
 	}
 
@@ -94,6 +99,7 @@ func TranslateConfig(cfg *schema.Config) (DesiredState, error) {
 		priceYaml := pack.ID + PriceYamlSuffixPack
 		ds.Prices = append(ds.Prices, packPriceSpec(priceYaml, pack))
 		ds.ProductYamlForPriceYaml[priceYaml] = pack.ID
+		ds.pinPrice(priceYaml, pack.StripePriceID)
 	}
 
 	for _, mp := range cfg.MeteredPrices {
@@ -122,6 +128,12 @@ func TranslateConfig(cfg *schema.Config) (DesiredState, error) {
 	}
 
 	return ds, nil
+}
+
+func (ds *DesiredState) pinPrice(priceYamlID string, stripePriceID *string) {
+	if stripePriceID != nil && *stripePriceID != "" {
+		ds.PinnedPriceByYaml[priceYamlID] = *stripePriceID
+	}
 }
 
 // packPriceSpec produces a one-time Stripe Price. Recurring is nil, and that

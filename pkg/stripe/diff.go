@@ -156,10 +156,7 @@ func ComputeDiff(desired DesiredState, current CurrentState) DiffPlan {
 	}
 
 	// -- Prices ------------------------------------------------------
-	curPriceByYaml := map[string]ManagedPrice{}
-	for _, p := range current.Prices {
-		curPriceByYaml[p.YamlID] = p
-	}
+	curPriceByYaml := currentPriceByYaml(current.Prices, desired.PinnedPriceByYaml)
 	seenPrices := map[string]bool{}
 	for _, spec := range desired.Prices {
 		seenPrices[spec.YamlID] = true
@@ -268,6 +265,27 @@ func ComputeDiff(desired DesiredState, current CurrentState) DiffPlan {
 
 // productDiffFields returns a human-readable list of field names that
 // differ between spec and current. Empty slice = no change.
+func currentPriceByYaml(newestFirst []ManagedPrice, pinned map[string]string) map[string]ManagedPrice {
+	out := map[string]ManagedPrice{}
+	for _, p := range newestFirst {
+		held, seen := out[p.YamlID]
+		if !seen || outranks(p, held, pinned[p.YamlID]) {
+			out[p.YamlID] = p
+		}
+	}
+	return out
+}
+
+func outranks(candidate, held ManagedPrice, pinnedID string) bool {
+	if pinnedID != "" && held.StripeID == pinnedID {
+		return false
+	}
+	if pinnedID != "" && candidate.StripeID == pinnedID {
+		return true
+	}
+	return candidate.Active && !held.Active
+}
+
 func productDiffFields(spec ProductSpec, cur ManagedProduct) []string {
 	var out []string
 	if spec.Name != cur.Name {
